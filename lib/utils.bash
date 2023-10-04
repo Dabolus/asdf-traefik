@@ -2,7 +2,6 @@
 
 set -euo pipefail
 
-# TODO: Ensure this is the correct GitHub homepage where releases can be downloaded for traefik.
 GH_REPO="https://github.com/traefik/traefik"
 TOOL_NAME="traefik"
 TOOL_TEST="traefik --help"
@@ -27,13 +26,37 @@ sort_versions() {
 list_github_tags() {
 	git ls-remote --tags --refs "$GH_REPO" |
 		grep -o 'refs/tags/.*' | cut -d/ -f3- |
-		sed 's/^v//' # NOTE: You might want to adapt this sed to remove non-version strings from tags
+		sed 's/^v//'
 }
 
 list_all_versions() {
-	# TODO: Adapt this. By default we simply list the tag names from GitHub releases.
-	# Change this function if traefik has other means of determining installable versions.
 	list_github_tags
+}
+
+get_platform() {
+	# Get uname and lowercase it with awk
+	local os=$(uname | awk '{print tolower($0)}')
+	# Make sure the platform is supported
+	if [[ "$os" == "darwin" || "$os" == "linux" || "$os" == "freebsd" ]]; then
+		echo "$os"
+	else
+		>&2 echo "unsupported os: ${os}" && exit 1
+	fi
+}
+
+get_arch() {
+  local arch=$(uname -m)
+	if [[ "$arch" == "x86_64" || "$arch" == "amd64" ]]; then
+		echo "amd64"
+	elif [[ "$arch" == "arm64" || "$arch" == "aarch64" || "$arch" == "aarch64_be" || "$arch" == "armv8b" || "$arch" == "armv8l" ]]; then
+		echo "arm64"
+	elif [[ "$arch" == "armv6" || "$arch" == "armv6l" ]]; then
+		echo "armv6"
+	elif [[ "$arch" == "i386" || "$arch" == "i686" ]]; then
+		echo "386"
+	else
+		>&2 echo "unsupported arch: ${arch}" && exit 1
+	fi
 }
 
 download_release() {
@@ -41,8 +64,7 @@ download_release() {
 	version="$1"
 	filename="$2"
 
-	# TODO: Adapt the release URL convention for traefik
-	url="$GH_REPO/archive/v${version}.tar.gz"
+	url="$GH_REPO/releases/download/v${version}/traefik_v${version}_$(get_platform)_$(get_arch).tar.gz"
 
 	echo "* Downloading $TOOL_NAME release $version..."
 	curl "${curl_opts[@]}" -o "$filename" -C - "$url" || fail "Could not download $url"

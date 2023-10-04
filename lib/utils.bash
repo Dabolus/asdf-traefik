@@ -34,18 +34,20 @@ list_all_versions() {
 }
 
 get_platform() {
+	local os
 	# Get uname and lowercase it with awk
-	local os=$(uname | awk '{print tolower($0)}')
+	os=$(uname | awk '{print tolower($0)}')
 	# Make sure the platform is supported
 	if [[ "$os" == "darwin" || "$os" == "linux" || "$os" == "freebsd" ]]; then
 		echo "$os"
 	else
-		>&2 echo "unsupported os: ${os}" && exit 1
+		echo >&2 "unsupported os: ${os}" && exit 1
 	fi
 }
 
 get_arch() {
-  local arch=$(uname -m)
+	local arch
+	arch=$(uname -m)
 	if [[ "$arch" == "x86_64" || "$arch" == "amd64" ]]; then
 		echo "amd64"
 	elif [[ "$arch" == "arm64" || "$arch" == "aarch64" || "$arch" == "aarch64_be" || "$arch" == "armv8b" || "$arch" == "armv8l" ]]; then
@@ -55,7 +57,7 @@ get_arch() {
 	elif [[ "$arch" == "i386" || "$arch" == "i686" ]]; then
 		echo "386"
 	else
-		>&2 echo "unsupported arch: ${arch}" && exit 1
+		echo >&2 "unsupported arch: ${arch}" && exit 1
 	fi
 }
 
